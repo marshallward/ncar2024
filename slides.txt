@@ -1,0 +1,28 @@
+================
+MOM6 on the GPU?
+================
+
+:author: Marshall Ward
+:organization: NOAA-GFDL
+:description: Thoughts on how MOM6 on a GPU may look (TODO)
+:date: 2024-08-28
+:url: TODO
+:preface: TODO
+
+
+Topics
+======
+
+* FMS: How compatible with Nvidia?
+   - IO woes
+
+* GPU on Fortran
+
+  * CUDA / HIP
+  * OpenACC -> CUDA
+  * OpenMP -> OpenACC -> CUDA
+  * do concurrent -> CUDA (?)
+
+* Bit reproducibility
+
+  * Why?  Hardware is not sufficient for community codes
