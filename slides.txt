@@ -26,3 +26,31 @@ Topics
 * Bit reproducibility
 
   * Why?  Hardware is not sufficient for community codes
+
+
+GPU vs CPU
+==========
+
+====        ====  ===== ===   =====
+Arch        SMs   Cores ISA   Clock
+======      ====
+Volta       80    32
+Ampere
+Hopper      132   72
+Blackwell
+
+
+32-bit mode?
+============
+
+* Ocean depth ~ 4km, dynamically siginificant depth is 10mm
+
+* Ocean tracers are conserved over centuries
+
+  * Need more than 7 digits
+
+.. (Have I got that right?)
+
+* Momentum exchange with ocean is fast, single precision is sufficent
+
+  * But is it worth the cost of constant conversion?

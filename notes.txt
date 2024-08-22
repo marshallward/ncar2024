@@ -1,0 +1,22 @@
+Bit repro tests:
+
+* -acc            (gpu)
+* -acc=multicore  ("openmp")
+* -acc=host       (serial)
+
+Should these agree?  If not: How can we produce equivalent tests for GPU?
+
+Concerns:
+   - What if we (or the compiler) simply forget or misfire a copy in/out of
+     device?  Is this detectable?
+   - Agreement across devices?  (eg Ampere vs Hopper)
+
+i.e. What is the maintenance costs of OpenACC/GPU directives?
+
+----
+
+benchmarking concerns
+
+* PTX JIT seems to be enabled on default
+  We probably don't want to include JIT compilation times...
+  (Or do we?)
