@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="generator" content="pandoc">
+  <meta name="author" content="Marshall Ward">
+  <meta name="dcterms.date" content="2024-08-28">
+  <title>MOM6 on the GPU?</title>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
+  <link rel="stylesheet" href="./reveal.js/dist/reveal.css">
+  <style type="text/css">
+      code{white-space: pre-wrap;}
+      span.smallcaps{font-variant: small-caps;}
+      span.underline{text-decoration: underline;}
+      div.column{display: inline-block; vertical-align: top; width: 50%;}
+  </style>
+  <link rel="stylesheet" href="./reveal.js/css/theme/gfdl.css" id="theme">
+  <!-- Explicitly add zenburn for highlight support -->
+  <link rel="stylesheet" href="./reveal.js/plugin/highlight/zenburn.css" id="theme">
+  <!-- Printing and PDF exports -->
+  <script>
+    var link = document.createElement( 'link' );
+    link.rel = 'stylesheet';
+    link.type = 'text/css';
+    link.href = window.location.search.match( /print-pdf/gi ) ? './reveal.js/css/print/pdf.scss' : './reveal.js/css/print/paper.scss';
+    document.getElementsByTagName( 'head' )[0].appendChild( link );
+  </script>
+  <!--[if lt IE 9]>
+  <script src="./reveal.js/lib/js/html5shiv.js"></script>
+  <![endif]-->
+  <base href="./index.html">
+</head>
+<body>
+  <div class="reveal"
+       style="background: url(img/bg_gfdl.jpg);
+              background-size: cover;">
+
+    <header style="width: 10vh; position: absolute; bottom: 2vh; right: 2vh;">
+      <img src="img/noaa_logo.png">
+    </header>
+
+    <footer style="font-size: 1pc; position: absolute; bottom: 2%; left: 2%;">
+      <code><p><a
+href="https://github.com/marshallward/ncar2024.html">https://github.com/marshallward/ncar2024.html</a></p></code>
+    </footer>
+
+    <div class="slides">
+
+<section id="title-slide">
+  <!--div class="reveal" style="text-align: right;">
+    <img src="img/noaa_logo.png"
+         style="background: none; border: none; box-shadow: none;
+         width: 30%"
+         alt="NCI">
+  </div-->
+  <h1 class="title">MOM6 on the GPU?</h1>
+  <p class="author" style="text-align: right;">Marshall Ward</p>
+  <!-- org has a <p> for some reason... so use <div> -->
+  <div class="organization" style="text-align: right;"><p>NOAA-GFDL</p></div>
+  <p class="date" style="text-align: right;">2024-08-28</p>
+  <!-- Currently cannot add notes to a title slide, so have to do manually-->
+  <aside class="notes">
+    <p>Gathering of talking points for porting MOM6 to GPU
+    platforms.</p>
+  </aside>
+</section>
+
+<section id="topics" class="title-slide slide level1">
+<h1>Topics</h1>
+<ul>
+<li>GPU on Fortran
+<ul>
+<li>CUDA / HIP</li>
+<li>OpenACC -&gt; CUDA</li>
+<li>OpenMP -&gt; OpenACC -&gt; CUDA</li>
+<li>do concurrent -&gt; CUDA (?)</li>
+</ul></li>
+</ul>
+</section>
+
+<section id="peak-gpu-nvidia" class="title-slide slide level1">
+<h1>Peak GPU (Nvidia)</h1>
+<p>Peak computation:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Arch</th>
+<th>Year</th>
+<th>SMs</th>
+<th>Cores</th>
+<th>FMA</th>
+<th>Clock (GHz)</th>
+<th>TFLOPs</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>V100</td>
+<td>2017</td>
+<td>80</td>
+<td>32</td>
+<td>2</td>
+<td>1.37</td>
+<td>7.0</td>
+</tr>
+<tr class="even">
+<td>A100</td>
+<td>2020</td>
+<td>108</td>
+<td>32</td>
+<td>2</td>
+<td>1.41</td>
+<td>9.7</td>
+</tr>
+<tr class="odd">
+<td>H100</td>
+<td>2022</td>
+<td>114</td>
+<td>64</td>
+<td>2</td>
+<td>1.755</td>
+<td>25.6</td>
+</tr>
+</tbody>
+</table>
+<p>(2x with Tensor cores)</p>
+</section>
+
+<section id="peak-cpu-intel" class="title-slide slide level1">
+<h1>Peak CPU (Intel)</h1>
+<table>
+<thead>
+<tr class="header">
+<th>CPU</th>
+<th>Year</th>
+<th>Cores</th>
+<th>AVX</th>
+<th>FMAc</th>
+<th>Clock</th>
+<th>TFLOPs</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>8274</td>
+<td>2019</td>
+<td>24</td>
+<td>8</td>
+<td>4</td>
+<td>2.8</td>
+<td>2.1</td>
+</tr>
+<tr class="even">
+<td>8368</td>
+<td>2021</td>
+<td>38</td>
+<td>8</td>
+<td>4</td>
+<td>3.4</td>
+<td>4.1</td>
+</tr>
+<tr class="odd">
+<td>8592</td>
+<td>2023</td>
+<td>64</td>
+<td>8</td>
+<td>4</td>
+<td>4.0</td>
+<td>8.2</td>
+</tr>
+<tr class="even">
+<td>6870</td>
+<td>2024</td>
+<td>144</td>
+<td>8</td>
+<td>4</td>
+<td>3.0</td>
+<td>13.8</td>
+</tr>
+</tbody>
+</table>
+</section>
+
+<section id="barriers-to-development" class="title-slide slide level1">
+<h1>Barriers to development</h1>
+<ul>
+<li>Welcoming to new contributions</li>
+<li>Long-term maintenance</li>
+<li>Portability across partners</li>
+<li>Bit reproducibility across partners</li>
+</ul>
+</section>
+
+<section id="mom6-consortium" class="title-slide slide level1">
+<h1>MOM6 Consortium</h1>
+
+</section>
+
+<section id="development-options" class="title-slide slide level1">
+<h1>Development Options</h1>
+<p>Fortran-compatible</p>
+<ul>
+<li>OpenACC</li>
+<li>OpenMP</li>
+<li><code>do concurrent</code></li>
+</ul>
+</section>
+
+<section id="do-concurrent" class="title-slide slide level1">
+<h1><code>do concurrent</code></h1>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<tbody>
+<tr class="odd">
+<td><pre class="fortran"><code>do i = 1, n
+  a(i) = b(i) * c(i) + d(i)    
+end do</code></pre></td>
+<td><pre class="fortran"><code>do concurrent (i=1:n)
+  a(i) = b(i) * c(i) + d(i)    
+end do</code></pre></td>
+</tr>
+</tbody>
+</table>
+<pre class="fortran"><code>do i = 1, n
+  a(i) = b(i) * c(i) + d(i)
+end do</code></pre>
+</section>
+
+<section id="challenges" class="title-slide slide level1">
+<h1>Challenges</h1>
+<ul>
+<li>FMS is a framework layer to most OS operations
+<ul>
+<li>Parallelization (MPI)</li>
+<li>IO, including domain decomposition</li>
+<li>Miscellaneous (clocks, ...?)</li>
+</ul></li>
+</ul>
+</section>
+
+<section id="parallelization" class="title-slide slide level1">
+<h1>Parallelization</h1>
+<ol type="1">
+<li><p>Ignore MPI for GPU builds? Assume PE == 1?</p></li>
+<li><p>Consider MPI across nodes, GPU on-node?</p></li>
+<li><p>Component parallelization (e.g. global barotropic on
+GPU?)</p></li>
+<li><p>Serious GPU runs need multiple cards.</p>
+<p>How (if at all) do we integrate this into FMS
+parallelization?</p></li>
+</ol>
+</section>
+
+<section id="beyond-nvidia" class="title-slide slide level1">
+<h1>Beyond Nvidia</h1>
+<p>Competitors are developing GPGPUs, with similar support:</p>
+<ul>
+<li>Nvidia pulls from the flang (LLVM) open source project</li>
+<li>Intel support OpenMP / OpenACC migration (SPIR64?)</li>
+<li>GNU can generate AMD GPU bytecode</li>
+</ul>
+</section>
+
+<section id="other-stuff" class="title-slide slide level1">
+<h1>Other Stuff</h1>
+<ul>
+<li>SYCL</li>
+<li><dl>
+<dt>AMD ROCm HIP: Nvidia, AMD, x86</dt>
+<dd>
+<p>(</p>
+</dd>
+</dl></li>
+</ul>
+</section>
+
+<section id="proposed-strategy" class="title-slide slide level1">
+<h1>Proposed Strategy</h1>
+<ol type="1">
+<li><p>Focus on Nvidia, start with OpenACC</p>
+<p>Nvidia has first-class support for OpenACC -&gt; CUDA conversion, and
+we can expect the highest level of support.</p></li>
+<li><p>Explore transition to OpenMP</p>
+<p>OpenMP and OpenACC mirror each other, with some additional</p></li>
+<li><p>Embrace language-specific constructs</p>
+<p><code>do concurrent</code> with OpenACC/OpenMP may allow for
+convergence of CPU and GPU code blocks.</p></li>
+</ol>
+</section>
+    </div>
+  </div>
+
+  <script src="./reveal.js/dist/reveal.js"></script>
+  <script src="./reveal.js/plugin/math/math.js"></script>
+  <script src="./reveal.js/plugin/notes/notes.js"></script>
+  <script src="./reveal.js/plugin/highlight/highlight.js"></script>
+
+  <script>
+
+      // Full list of configuration options available at:
+      // https://github.com/hakimel/reveal.js#configuration
+      Reveal.initialize({
+        // Display controls in the bottom right corner
+        controls: true,
+        // Display a presentation progress bar
+        progress: true,
+        // Display the page number of the current slide
+        slideNumber: true,
+        // Push each slide change to the browser history
+        history: true,
+        // Enable keyboard shortcuts for navigation
+        keyboard: true,
+        // Enable the slide overview mode
+        overview: true,
+        // Vertical centering of slides
+        center: true,
+        // Enables touch navigation on devices with touch input
+        touch: true,
+        // Turns fragments on and off globally
+        fragments: true,
+        // Flags if we should show a help overlay when the questionmark
+        // key is pressed
+        help: true,
+        // Number of milliseconds between automatically proceeding to the
+        // next slide, disabled when set to 0, this value can be overwritten
+        // by using a data-autoslide attribute on your slides
+        autoSlide: 0,
+        // Stop auto-sliding after user input
+        autoSlideStoppable: true,
+        // Transition style
+        transition: 'slide', // none/fade/slide/convex/concave/zoom
+        // Transition speed
+        transitionSpeed: 'default', // default/fast/slow
+        // Transition style for full page slide backgrounds
+        backgroundTransition: 'fade', // none/fade/slide/convex/concave/zoom
+        // Number of slides away from the current that are visible
+        viewDistance: 3,
+        math: {
+          //mathjax: 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js',
+          mathjax: 'https://cdn.jsdelivr.net/gh/mathjax/mathjax@2.7.9/MathJax.js',
+          config: 'TeX-AMS_HTML-full',
+          "HTML-CSS": {
+              preferredFont: "Neo-Euler",
+              //preferredFont: "Asana-Math",
+          },
+          //TeX: {
+          //  inlineMath: [['\\(','\\)']],
+          //  displayMath: [['\\[','\\]']],
+          //  balanceBraces: true,
+          //  processEscapes: false,
+          //  processRefs: true,
+          //  processEnvironments: true,
+          //  preview: 'TeX',
+          //  skipTags: ['script','noscript','style','textarea','pre','code'],
+          //  ignoreClass: 'tex2jax_ignore',
+          //  processClass: 'tex2jax_process'
+          //},
+        },
+
+        // Optional reveal.js plugins
+        dependencies: [
+          { src: './reveal.js/lib/js/classList.js', condition: function() { return !document.body.classList; } },
+          { src: './reveal.js/plugin/zoom/zoom.js', async: true },
+          { src: './reveal.js/plugin/notes/notes.js', async: true }
+        ],
+        plugins : [ RevealMath, RevealNotes, RevealHighlight],
+        pdfMaxPagesPerSlide: 1,
+      });
+    </script>
+    </body>
+</html>
