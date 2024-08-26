@@ -6,51 +6,353 @@ MOM6 on the GPU?
 :organization: NOAA-GFDL
 :description: Thoughts on how MOM6 on a GPU may look (TODO)
 :date: 2024-08-28
-:url: TODO
-:preface: TODO
+:url: https://github.com/marshallward/ncar2024.html
+:preface:
+   Gathering of talking points for porting MOM6 to GPU platforms.
 
 
 Topics
 ======
 
-* FMS: How compatible with Nvidia?
-   - IO woes
+* GPU vs CPU: What do we gain?
 
-* GPU on Fortran
+* Producing GPU code from Fortran
 
-  * CUDA / HIP
-  * OpenACC -> CUDA
-  * OpenMP -> OpenACC -> CUDA
-  * do concurrent -> CUDA (?)
-
-* Bit reproducibility
-
-  * Why?  Hardware is not sufficient for community codes
+* MOM6 as a community model
 
 
-GPU vs CPU
+Peak performance
+================
+
+.. list-table::
+
+   * - Nvidia GPUs
+
+       ====  ====  ======
+       Arch  Year  TFLOPs
+       ====  ====  ======
+       V100  2017  7.0
+       A100  2020  9.7
+       H100  2022  25.6
+       B100  --    --
+       ====  ====  ======
+
+     - Intel CPUs
+
+       ====  ====  ======
+       Xeon  Year  TFLOPs
+       ====  ====  ======
+       8274  2019  2.1
+       8368  2021  4.1
+       8592  2023  8.2
+       6780  2024  13.8
+       ====  ====  ======
+
+
+Peak GPU (Nvidia)
+-----------------
+
+Peak computation:
+
+====  ====  ====  ===== ===   =========== ======
+Arch  Year  SMs   Cores FMA   Clock (GHz) TFLOPs
+====  ====  ====  ===== ===   =========== ======
+V100  2017  80    32    2     1.37        7.0
+A100  2020  108   32    2     1.41        9.7
+H100  2022  114   64    2     1.755       25.6
+====  ====  ====  ===== ===   =========== ======
+
+(2x with Tensor cores)
+
+.. There are three V100 models, I chose the middle one.
+
+.. H100 is for PCIe.  For SXM5, peak is 33.5 TFLOP/s
+
+.. References
+   https://resources.nvidia.com/en-us-tensor-core
+   https://images.nvidia.com/aem-dam/en-zz/Solutions/data-center/nvidia-ampere-architecture-whitepaper.pdf
+
+
+Peak CPU (Intel)
+----------------
+
+====  =====  =====  ===  ====  =====  ======
+CPU   Year   Cores  AVX  FMAc  Clock  TFLOPs
+====  =====  =====  ===  ====  =====  ======
+8274  2019   24     8    4     2.8    2.1
+8368  2021   38     8    4     3.4    4.1
+8592  2023   64     8    4     4.0    8.2
+6780  2024   144    8    4     3.0    13.8
+====  =====  =====  ===  ====  =====  ======
+
+
+Compute vs RAM
+==============
+
+.. image:: img/dgemm_vs_daxpy.svg
+
+
+Peak RAM bound
+==============
+
+.. TODO: Compute these from specs, dont copy from Wikipedia
+
+.. list-table::
+
+   * - Nvidia GPUs
+
+       ====  ====  ======
+       Arch  Year  GB/s
+       ====  ====  ======
+       V100  2017  896
+       A100  2020  778*
+       H100  2022  640*
+       SXM5  --    960*
+       ====  ====  ======
+
+     - Intel CPUs
+
+       ====  ====  ======
+       Xeon  Year  GB/s
+       ====  ====  ======
+       8274  2019  141
+       8368  2021  204
+       8592  2023  307
+       6780  2024  409
+       ====  ====  ======
+
+
+
+
+Development Issues
+==================
+
+* Coding methods
+
+  * OpenACC, OpenMP, ``do concurrent``, lower level?  Rewrite?
+
+* Impementation Challenges
+
+  * Data transfer: explicit, managed?
+
+* External codes
+
+  * 
+
+
+OpenACC and OpenMP
+==================
+
+* Both are open standards, OpenACC has Nvidia connections
+
+* OpenACC host/target support predates OpenMP
+
+* Both standards heavily mirror each other, similar people driving development
+  of each standard.
+
+.. NOAA and NCAR are auxiliary members, Daniel Howard is Corporate Officer
+
+
+``do concurrent``
+=================
+
+.. list-table::
+   :widths: 50 50
+
+   * - .. code:: fortran
+
+          do i = 1, n
+            a(i) = b(i) * c(i) + d(i)    
+          end do
+
+     - .. code:: fortran
+
+          do concurrent (i=1:n)
+            a(i) = b(i) * c(i) + d(i)    
+          end do
+
+Not strictly parallel (only "arbitrary order") and subject to many internal
+constraints, more than OpenACC loops.
+
+(See https://flang.llvm.org/docs/DoConcurrent.html)
+
+OpenACC decoration can overcome some of these problems.
+
+.. other notes
+   GNU cannot even parse some do concurrent decorators, see below.
+   https://gcc.gnu.org/bugzilla/show_bug.cgi?id=101602
+
+.. Nvidia and Intel are both promoting this feature
+
+
+Challenges
 ==========
 
-====        ====  ===== ===   =====
-Arch        SMs   Cores ISA   Clock
-======      ====
-Volta       80    32
-Ampere
-Hopper      132   72
-Blackwell
+* FMS is a framework layer to most OS operations
+
+  * Parallelization (MPI)
+
+  * IO, including domain decomposition
+
+  * Miscellaneous (clocks, ...?)
 
 
-32-bit mode?
-============
+Parallelization
+===============
 
-* Ocean depth ~ 4km, dynamically siginificant depth is 10mm
+1. Ignore MPI for GPU builds?  Assume PE == 1?
 
-* Ocean tracers are conserved over centuries
+2. Consider MPI across nodes, GPU on-node?
 
-  * Need more than 7 digits
+3. Component parallelization (e.g. global barotropic on GPU?)
 
-.. (Have I got that right?)
+4. Serious GPU runs need multiple cards.
 
-* Momentum exchange with ocean is fast, single precision is sufficent
+   How (if at all) do we integrate this into FMS parallelization?
 
-  * But is it worth the cost of constant conversion?
+
+Paths to GPU code
+=================
+
+.. image:: img/gpucode.svg
+
+Red shows the current Nvidia toolchain
+
+
+
+Beyond Nvidia
+=============
+
+Competitors are developing GPGPUs, with similar support:
+
+* Nvidia pulls from the flang (LLVM) open source project
+
+* Intel supports OpenMP migration
+
+  * ``ifort`` will never offload, only ``ifx``
+
+* GNU can generate AMD GPU bytecode
+
+
+Under the Hood
+==============
+
+* CUDA: Nvidia proprietary language and Runtime
+
+   - AFAIK, compilers transpile OpenACC -> CUDA -> PTX -> GPU bytecode
+
+* OpenCL: Open alternative for Intel, AMD, and Nvidia(?)
+
+* HIP: AMD-only alternative, part of AMD ROCm
+
+* SYCL is a newer cross-platform alternative
+
+These are rather low-level and often not easy to use.  Probably unrealistic to
+expect scientists to write at this level.
+
+
+Even deeper
+-----------
+
+Assembly-like IRs, with some cross-vendor support:
+
+* PTX (Nvidia): generated by CUDA, OpenCL, GCC(?)
+
+* SPIR (Intel): OpenCL, ...?
+
+* HSAIL (AMD, ARM): generated from HIP, (...OpenCL?) via ROCm? GCC?
+
+Although these are somewhat generic, for practical purposes they are associated
+with particular hardware.
+
+
+OpenACC vs OpenMP
+=================
+
+* OpenACC has more features, such as the very convenient ``$acc kernels``
+
+* OpenMP has wider support across systems and compilers
+
+  * For example, we know GCC has better OpenMP support
+
+  * ... But do we care?
+
+Monitoring of Nvidia forums suggests comparable performance (and perhaps more
+attention to OpenMP at the moment).
+
+
+Barriers to development
+=======================
+
+* Contributions from new scientists
+
+* Long-term maintenance
+
+* Portability across partners
+
+* Bit reproducibility across partners
+
+
+MOM6 Consortium
+===============
+
+.. image:: img/consortium.svg
+
+
+What is the MOM6 Consortium?
+----------------------------
+
+.. list-table::
+   :widths: 50 50
+
+   - * .. image:: img/consortium.svg
+
+     * Codebase is governed by a consortium of research groups.
+
+       All changes to the "hub" must be tracked and preserved.
+
+       Groups manage their own branch, and contribute to ``main``.
+
+
+Proposed Strategy
+=================
+
+1. Focus on Nvidia, start with OpenACC
+
+   Nvidia has first-class support for OpenACC -> CUDA conversion, and we can
+   expect the highest level of support.
+
+   a. Embrace managed memory?  Or manual data transfer?
+
+2. Explore transition to OpenMP
+
+   OpenMP and OpenACC mirror each other, with some nuances
+
+   a. Extend to Intel? AMD?
+
+3. Embrace language-specific constructs
+
+   ``do concurrent`` with OpenACC/OpenMP may allow for convergence of CPU and
+   GPU code blocks.
+
+4. Focus on single-GPU then...
+
+   a. 1 MPI rank per GPU? 
+
+   b. Single MPI rank, multiple GPUs?
+
+
+.. 32-bit mode?
+   ============
+
+   * Ocean depth ~ 4km, dynamically siginificant depth is 10mm
+
+   * Ocean tracers are conserved over centuries
+
+     * Need more than 7 digits
+
+   .. (Have I got that right?)
+
+   * Momentum exchange with ocean is fast, single precision is sufficent
+
+     * But is it worth the cost of constant conversion?

@@ -70,18 +70,88 @@ href="https://github.com/marshallward/ncar2024.html">https://github.com/marshall
 <section id="topics" class="title-slide slide level1">
 <h1>Topics</h1>
 <ul>
-<li>GPU on Fortran
-<ul>
-<li>CUDA / HIP</li>
-<li>OpenACC -&gt; CUDA</li>
-<li>OpenMP -&gt; OpenACC -&gt; CUDA</li>
-<li>do concurrent -&gt; CUDA (?)</li>
-</ul></li>
+<li>GPU vs CPU: What do we gain?</li>
+<li>Producing GPU code from Fortran</li>
+<li>MOM6 as a community model</li>
 </ul>
 </section>
 
-<section id="peak-gpu-nvidia" class="title-slide slide level1">
-<h1>Peak GPU (Nvidia)</h1>
+<section>
+<section id="peak-performance" class="title-slide slide level1">
+<h1>Peak performance</h1>
+<table>
+<tbody>
+<tr class="odd">
+<td><p>Nvidia GPUs</p>
+<table>
+<thead>
+<tr class="header">
+<th>Arch</th>
+<th>Year</th>
+<th>TFLOPs</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>V100</td>
+<td>2017</td>
+<td>7.0</td>
+</tr>
+<tr class="even">
+<td>A100</td>
+<td>2020</td>
+<td>9.7</td>
+</tr>
+<tr class="odd">
+<td>H100</td>
+<td>2022</td>
+<td>25.6</td>
+</tr>
+<tr class="even">
+<td>B100</td>
+<td>--</td>
+<td>--</td>
+</tr>
+</tbody>
+</table></td>
+<td><p>Intel CPUs</p>
+<table>
+<thead>
+<tr class="header">
+<th>Xeon</th>
+<th>Year</th>
+<th>TFLOPs</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>8274</td>
+<td>2019</td>
+<td>2.1</td>
+</tr>
+<tr class="even">
+<td>8368</td>
+<td>2021</td>
+<td>4.1</td>
+</tr>
+<tr class="odd">
+<td>8592</td>
+<td>2023</td>
+<td>8.2</td>
+</tr>
+<tr class="even">
+<td>6780</td>
+<td>2024</td>
+<td>13.8</td>
+</tr>
+</tbody>
+</table></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="peak-gpu-nvidia" class="slide level2">
+<h2>Peak GPU (Nvidia)</h2>
 <p>Peak computation:</p>
 <table>
 <thead>
@@ -127,9 +197,8 @@ href="https://github.com/marshallward/ncar2024.html">https://github.com/marshall
 </table>
 <p>(2x with Tensor cores)</p>
 </section>
-
-<section id="peak-cpu-intel" class="title-slide slide level1">
-<h1>Peak CPU (Intel)</h1>
+<section id="peak-cpu-intel" class="slide level2">
+<h2>Peak CPU (Intel)</h2>
 <table>
 <thead>
 <tr class="header">
@@ -171,7 +240,7 @@ href="https://github.com/marshallward/ncar2024.html">https://github.com/marshall
 <td>8.2</td>
 </tr>
 <tr class="even">
-<td>6870</td>
+<td>6780</td>
 <td>2024</td>
 <td>144</td>
 <td>8</td>
@@ -181,30 +250,112 @@ href="https://github.com/marshallward/ncar2024.html">https://github.com/marshall
 </tr>
 </tbody>
 </table>
+</section></section>
+<section id="compute-vs-ram" class="title-slide slide level1">
+<h1>Compute vs RAM</h1>
+<p><img data-src="img/dgemm_vs_daxpy.svg" alt="image" /></p>
 </section>
 
-<section id="barriers-to-development" class="title-slide slide level1">
-<h1>Barriers to development</h1>
+<section id="peak-ram-bound" class="title-slide slide level1">
+<h1>Peak RAM bound</h1>
+<table>
+<tbody>
+<tr class="odd">
+<td><p>Nvidia GPUs</p>
+<table>
+<thead>
+<tr class="header">
+<th>Arch</th>
+<th>Year</th>
+<th>GB/s</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>V100</td>
+<td>2017</td>
+<td>896</td>
+</tr>
+<tr class="even">
+<td>A100</td>
+<td>2020</td>
+<td>778*</td>
+</tr>
+<tr class="odd">
+<td>H100</td>
+<td>2022</td>
+<td>640*</td>
+</tr>
+<tr class="even">
+<td>SXM5</td>
+<td>--</td>
+<td>960*</td>
+</tr>
+</tbody>
+</table></td>
+<td><p>Intel CPUs</p>
+<table>
+<thead>
+<tr class="header">
+<th>Xeon</th>
+<th>Year</th>
+<th>GB/s</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>8274</td>
+<td>2019</td>
+<td>141</td>
+</tr>
+<tr class="even">
+<td>8368</td>
+<td>2021</td>
+<td>204</td>
+</tr>
+<tr class="odd">
+<td>8592</td>
+<td>2023</td>
+<td>307</td>
+</tr>
+<tr class="even">
+<td>6780</td>
+<td>2024</td>
+<td>409</td>
+</tr>
+</tbody>
+</table></td>
+</tr>
+</tbody>
+</table>
+</section>
+
+<section id="development-issues" class="title-slide slide level1">
+<h1>Development Issues</h1>
 <ul>
-<li>Welcoming to new contributions</li>
-<li>Long-term maintenance</li>
-<li>Portability across partners</li>
-<li>Bit reproducibility across partners</li>
+<li>Coding methods
+<ul>
+<li>OpenACC, OpenMP, <code>do concurrent</code>, lower level?
+Rewrite?</li>
+</ul></li>
+<li>Impementation Challenges
+<ul>
+<li>Data transfer: explicit, managed?</li>
+</ul></li>
+<li>External codes
+<ul>
+<li></li>
+</ul></li>
 </ul>
 </section>
 
-<section id="mom6-consortium" class="title-slide slide level1">
-<h1>MOM6 Consortium</h1>
-
-</section>
-
-<section id="development-options" class="title-slide slide level1">
-<h1>Development Options</h1>
-<p>Fortran-compatible</p>
+<section id="openacc-and-openmp" class="title-slide slide level1">
+<h1>OpenACC and OpenMP</h1>
 <ul>
-<li>OpenACC</li>
-<li>OpenMP</li>
-<li><code>do concurrent</code></li>
+<li>Both are open standards, OpenACC has Nvidia connections</li>
+<li>OpenACC host/target support predates OpenMP</li>
+<li>Both standards heavily mirror each other, similar people driving
+development of each standard.</li>
 </ul>
 </section>
 
@@ -226,9 +377,11 @@ end do</code></pre></td>
 </tr>
 </tbody>
 </table>
-<pre class="fortran"><code>do i = 1, n
-  a(i) = b(i) * c(i) + d(i)
-end do</code></pre>
+<p>Not strictly parallel (only "arbitrary order") and subject to many
+internal constraints, more than OpenACC loops.</p>
+<p>(See <a
+href="https://flang.llvm.org/docs/DoConcurrent.html">https://flang.llvm.org/docs/DoConcurrent.html</a>)</p>
+<p>OpenACC decoration can overcome some of these problems.</p>
 </section>
 
 <section id="challenges" class="title-slide slide level1">
@@ -256,40 +409,123 @@ parallelization?</p></li>
 </ol>
 </section>
 
+<section id="paths-to-gpu-code" class="title-slide slide level1">
+<h1>Paths to GPU code</h1>
+<p><img data-src="img/gpucode.svg" alt="image" /></p>
+<p>Red shows the current Nvidia toolchain</p>
+</section>
+
 <section id="beyond-nvidia" class="title-slide slide level1">
 <h1>Beyond Nvidia</h1>
 <p>Competitors are developing GPGPUs, with similar support:</p>
 <ul>
 <li>Nvidia pulls from the flang (LLVM) open source project</li>
-<li>Intel support OpenMP / OpenACC migration (SPIR64?)</li>
+<li>Intel supports OpenMP migration
+<ul>
+<li><code>ifort</code> will never offload, only <code>ifx</code></li>
+</ul></li>
 <li>GNU can generate AMD GPU bytecode</li>
 </ul>
 </section>
 
-<section id="other-stuff" class="title-slide slide level1">
-<h1>Other Stuff</h1>
+<section>
+<section id="under-the-hood" class="title-slide slide level1">
+<h1>Under the Hood</h1>
 <ul>
-<li>SYCL</li>
-<li><dl>
-<dt>AMD ROCm HIP: Nvidia, AMD, x86</dt>
-<dd>
-<p>(</p>
-</dd>
-</dl></li>
+<li><p>CUDA: Nvidia proprietary language and Runtime</p>
+<ul>
+<li>AFAIK, compilers transpile OpenACC -&gt; CUDA -&gt;
+PTX -&gt; GPU bytecode</li>
+</ul></li>
+<li><p>OpenCL: Open alternative for Intel, AMD, and Nvidia(?)</p></li>
+<li><p>HIP: AMD-only alternative, part of AMD ROCm</p></li>
+<li><p>SYCL is a newer cross-platform alternative</p></li>
+</ul>
+<p>These are rather low-level and often not easy to use. Probably
+unrealistic to expect scientists to write at this level.</p>
+</section>
+<section id="even-deeper" class="slide level2">
+<h2>Even deeper</h2>
+<p>Assembly-like IRs, with some cross-vendor support:</p>
+<ul>
+<li>PTX (Nvidia): generated by CUDA, OpenCL, GCC(?)</li>
+<li>SPIR (Intel): OpenCL, ...?</li>
+<li>HSAIL (AMD, ARM): generated from HIP, (...OpenCL?) via ROCm?
+GCC?</li>
+</ul>
+<p>Although these are somewhat generic, for practical purposes they are
+associated with particular hardware.</p>
+</section></section>
+<section id="openacc-vs-openmp" class="title-slide slide level1">
+<h1>OpenACC vs OpenMP</h1>
+<ul>
+<li>OpenACC has more features, such as the very convenient
+<code>$acc kernels</code></li>
+<li>OpenMP has wider support across systems and compilers
+<ul>
+<li>For example, we know GCC has better OpenMP support</li>
+<li>... But do we care?</li>
+</ul></li>
+</ul>
+<p>Monitoring of Nvidia forums suggests comparable performance (and
+perhaps more attention to OpenMP at the moment).</p>
+</section>
+
+<section id="barriers-to-development" class="title-slide slide level1">
+<h1>Barriers to development</h1>
+<ul>
+<li>Contributions from new scientists</li>
+<li>Long-term maintenance</li>
+<li>Portability across partners</li>
+<li>Bit reproducibility across partners</li>
 </ul>
 </section>
 
+<section>
+<section id="mom6-consortium" class="title-slide slide level1">
+<h1>MOM6 Consortium</h1>
+<p><img data-src="img/consortium.svg" alt="image" /></p>
+</section>
+<section id="what-is-the-mom6-consortium" class="slide level2">
+<h2>What is the MOM6 Consortium?</h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<tbody>
+<tr class="odd">
+<td><p><img data-src="img/consortium.svg" alt="image" /></p></td>
+<td><p>Codebase is governed by a consortium of research groups.</p>
+<p>All changes to the "hub" must be tracked and preserved.</p>
+<p>Groups manage their own branch, and contribute to
+<code>main</code>.</p></td>
+</tr>
+</tbody>
+</table>
+</section></section>
 <section id="proposed-strategy" class="title-slide slide level1">
 <h1>Proposed Strategy</h1>
 <ol type="1">
 <li><p>Focus on Nvidia, start with OpenACC</p>
 <p>Nvidia has first-class support for OpenACC -&gt; CUDA conversion, and
-we can expect the highest level of support.</p></li>
+we can expect the highest level of support.</p>
+<ol type="a">
+<li>Embrace managed memory? Or manual data transfer?</li>
+</ol></li>
 <li><p>Explore transition to OpenMP</p>
-<p>OpenMP and OpenACC mirror each other, with some additional</p></li>
+<p>OpenMP and OpenACC mirror each other, with some nuances</p>
+<ol type="a">
+<li>Extend to Intel? AMD?</li>
+</ol></li>
 <li><p>Embrace language-specific constructs</p>
 <p><code>do concurrent</code> with OpenACC/OpenMP may allow for
 convergence of CPU and GPU code blocks.</p></li>
+<li><p>Focus on single-GPU then...</p>
+<ol type="a">
+<li>1 MPI rank per GPU?</li>
+<li>Single MPI rank, multiple GPUs?</li>
+</ol></li>
 </ol>
 </section>
     </div>
