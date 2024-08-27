@@ -30,7 +30,7 @@ digraph gpucode {
     HIP [label="HIP"]
 
     PTX [label="PTX\n(Nvidia)"]
-    SPIR [label="SPIR\n(Intel)"]
+    SPIR [label="SPIR\n(Intel? ...)"]
     HSAIL [label="HSAIL\n(AMD)"]
 
     // Compilation methods
@@ -44,11 +44,11 @@ digraph gpucode {
 
     Other -> CUDA [style="dashed"]
 
-    // Again, this is cosmetic hacks to connect cluster_ext to cluster_device 
+    // Again, this is cosmetic hacks to connect cluster_ext to cluster_device
 
     // All languages to all device code
     //OpenMP -> HIP [ltail=cluster_lang, lhead=cluster_device]
-    
+
     //OpenACC -> CUDA [color="red"]
     OpenACC -> OpenCL [ltail=cluster_ext, lhead=cluster_device]
     OpenACC -> CUDA [color="red"]
@@ -77,7 +77,7 @@ digraph gpucode {
     }
 
     subgraph cluster_device {
-        label = "Device Code"
+        label = "Device API"
         style = "rounded"
         bgcolor = "deepskyblue"
         labeljust = l
