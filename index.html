@@ -38,7 +38,7 @@
               background-size: cover;">
 
     <header style="width: 10vh; position: absolute; bottom: 2vh; right: 2vh;">
-      <img src="img/noaa_logo.png">
+      <!-- img src="img/noaa_logo.png" -->
     </header>
 
     <footer style="font-size: 1pc; position: absolute; bottom: 2%; left: 2%;">
@@ -326,6 +326,13 @@ href="https://github.com/marshallward/ncar2024.html">https://github.com/marshall
 </table>
 </section>
 
+<section id="where-is-mom6" class="title-slide slide level1">
+<h1>Where is MOM6?</h1>
+<p><img data-src="img/mom6_roofline.svg" style="width:70.0%"
+alt="image" /></p>
+<p>At least memory bound, certainly not compute bound</p>
+</section>
+
 <section id="development-issues" class="title-slide slide level1">
 <h1>Development Issues</h1>
 <ul>
@@ -373,10 +380,9 @@ end do</code></pre></td>
 </tr>
 </tbody>
 </table>
-<p>Not strictly parallel (only "arbitrary order") and subject to many
-internal constraints, more than OpenACC loops.</p>
-<p>(See <a
-href="https://flang.llvm.org/docs/DoConcurrent.html">https://flang.llvm.org/docs/DoConcurrent.html</a>)</p>
+<p><a href="https://flang.llvm.org/docs/DoConcurrent.html">Not strictly
+parallel</a> (only "arbitrary order") and subject to many internal
+constraints, more than OpenACC loops.</p>
 <p>OpenACC decoration can overcome some of these problems.</p>
 </section>
 
@@ -405,12 +411,32 @@ parallelization?</p></li>
 </ol>
 </section>
 
+<section>
 <section id="paths-to-gpu-code" class="title-slide slide level1">
 <h1>Paths to GPU code</h1>
 <p><img data-src="img/gpucode.svg" alt="image" /></p>
-<p>Red shows the current Nvidia toolchain</p>
+<p>Nvidia toolchain in red</p>
 </section>
-
+<section id="generating-gpu-bytecode" class="slide level2">
+<h2>Generating GPU bytecode</h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<tbody>
+<tr class="odd">
+<td><img data-src="img/gpucode.svg" alt="image" /></td>
+<td><ul>
+<li></li>
+<li>OpenCL and HIP rely on LLVM to generate bytecode for any device.
+CUDA is less flexible.</li>
+<li></li>
+</ul></td>
+</tr>
+</tbody>
+</table>
+</section></section>
 <section id="beyond-nvidia" class="title-slide slide level1">
 <h1>Beyond Nvidia</h1>
 <p>Competitors are developing GPGPUs, with similar support:</p>
@@ -480,7 +506,8 @@ perhaps more attention to OpenMP at the moment).</p>
 <section>
 <section id="mom6-consortium" class="title-slide slide level1">
 <h1>MOM6 Consortium</h1>
-<p><img data-src="img/consortium.svg" alt="image" /></p>
+<p><img data-src="img/consortium.svg" style="width:75.0%"
+alt="image" /></p>
 </section>
 <section id="what-is-the-mom6-consortium" class="slide level2">
 <h2>What is the MOM6 Consortium?</h2>

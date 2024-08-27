@@ -124,6 +124,13 @@ Peak RAM bound
        ====  ====  ======
 
 
+Where is MOM6?
+==============
+
+.. image:: img/mom6_roofline.svg
+   :width: 70%
+
+At least memory bound, certainly not compute bound
 
 
 Development Issues
@@ -173,10 +180,10 @@ OpenACC and OpenMP
             a(i) = b(i) * c(i) + d(i)    
           end do
 
-Not strictly parallel (only "arbitrary order") and subject to many internal
+`Not strictly parallel`_ (only "arbitrary order") and subject to many internal
 constraints, more than OpenACC loops.
 
-(See https://flang.llvm.org/docs/DoConcurrent.html)
+.. _Not strictly parallel: https://flang.llvm.org/docs/DoConcurrent.html
 
 OpenACC decoration can overcome some of these problems.
 
@@ -218,8 +225,25 @@ Paths to GPU code
 
 .. image:: img/gpucode.svg
 
-Red shows the current Nvidia toolchain
+Red arrows show the Nvidia toolchain
 
+
+Generating GPU bytecode
+-----------------------
+
+.. list-table::
+   :widths: 50 50
+
+   * - .. image:: img/gpucode.svg
+
+     - * OpenACC and OpenMP are extensions to C/C++ and Fortran.  Other
+         languages rely on the device APIs (usually by C API) to generate API
+         code.
+
+       * OpenCL and HIP rely on LLVM to generate bytecode for any device.  CUDA
+         is less flexible.
+
+       * 
 
 
 Beyond Nvidia
@@ -299,6 +323,7 @@ MOM6 Consortium
 ===============
 
 .. image:: img/consortium.svg
+   :width: 75%
 
 
 What is the MOM6 Consortium?
