@@ -25,17 +25,17 @@ Peak performance
 ================
 
 .. list-table::
+   :width: 80 20
 
    * - Nvidia GPUs
 
-       ====  ====  ======
+       ====  ====  ===========
        Arch  Year  TFLOPs
-       ====  ====  ======
+       ====  ====  ===========
        V100  2017  7.0
-       A100  2020  9.7
-       H100  2022  25.6
-       B100  --    --
-       ====  ====  ======
+       A100  2020  9.7/19.5
+       H100  2022  25.6/51.2
+       ====  ====  ===========
 
      - Intel CPUs
 
@@ -47,6 +47,8 @@ Peak performance
        8592  2023  8.2
        6780  2024  13.8
        ====  ====  ======
+
+2x GPU speedup if using tensor cores
 
 
 Peak GPU (Nvidia)
