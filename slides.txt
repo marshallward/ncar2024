@@ -232,8 +232,8 @@ Others...?
 .. _PSyclone: https://github.com/stfc/PSyclone
 
 
-OpenACC
-=======
+Example OpenACC
+===============
 
 Data transfers
 
@@ -262,11 +262,11 @@ Loop execution
 
 .. OpenMP
    ======
-   
+
    OpenMP 4.0 introduced the ``target`` construct:
-   
+
    .. code:: fortran
-   
+
       !$omp target data map(to:x) map(tofrom:y)
       do i = 1, n
         y(i) = a * x(i) + y(i)
@@ -276,22 +276,22 @@ Loop execution
 
    OpenACC and OpenMP
    ==================
-   
+
    * Both are open standards, OpenACC has Nvidia connections
-   
+
    * OpenACC host/target support predates OpenMP
-   
+
    * Both standards heavily mirror each other, similar people driving development
      of each standard.
-   
+
    .. NOAA and NCAR are auxiliary members, Daniel Howard is Corporate Officer
-   
-   
+
+
    OpenACC vs OpenMP
    =================
-   
+
    * OpenACC has more features, such as the very convenient ``$acc kernels``
-   
+
    * OpenMP has wider support across systems and compilers
 
 
@@ -311,7 +311,8 @@ can be offloaded to GPUs.
 
 .. _Not strictly parallel: https://flang.llvm.org/docs/DoConcurrent.html
 
-(OpenACC constructs can overcome some of its limitations.)
+(OpenACC can annotate ``do concurrent`` and overcome some of these
+limitations.)
 
 .. other notes
    GNU cannot even parse some do concurrent decorators, see below.
@@ -356,23 +357,39 @@ MOM6 GPU efforts
 
 * Barotropic solver (NCAR)
 
-* Vertical Remapping workshop
+* Vertical remapping workshop 😐
 
 * BGC do-concurrent migration (Niki Zadeh, GFDL)
 
 * Horizontal Viscosity (ongoing)
 
+Also ML-based solvers:
+
+* PyTorch interface (Cheng Zhang; not yet merged)
+
+* SmartRedis interface (Andrew Shao)
+
 
 .. Barriers to development
    =======================
-   
+
    * Contributions from new scientists
-   
+
    * Long-term maintenance
-   
+
    * Portability across partners
-   
+
    * Bit reproducibility across partners
+
+.. -----
+
+.. Path to Integration
+   ===================
+
+   TODO...
+   (what does this even mean)
+
+.. -----
 
 
 MOM6 Consortium
@@ -412,10 +429,25 @@ Shared development
        This is achieved through a commitment to reproducibility.
 
 
-"Weak" reproducibility
-======================
+Bit reproducibility
+===================
 
-TODO
+.. figure:: media/twolayer.mp4
+
+We model over an enormous range of length and time scales, with inherent
+turbulent cascades.
+
+
+When to reproduce
+=================
+
+* Since each node has its own hardware, compilers, and configurations, we
+  cannot ever guarantee identical answers for everyone everyone.
+
+* Development must still go on, but we cannot violate each node's bit
+  reproducibility.
+
+* We achieve this by *self consistency*!  What does this mean?
 
 
 Self Consistency
@@ -472,6 +504,25 @@ Expressions should be invariant to rotation
 FMA support
 ===========
 
+* Enabling FMAs will change answers, e.g. :math:`a b + c d`.  What is the order
+  of operations?
+
+* *Self-consistent* FMAs are allowed, otherwise they are disabled (e.g.
+  rotation) with parentheses
+
+  .. code::
+
+      PFu(I,j,k) = &
+         (pa(i,j) * h(i,j,k) + intz_dpa(i,j)) &
+         - (pa(i+1,j) * h(i+1,j,k) + intz_dpa(i+1,j)) + ...
+
+* FMA builds have their own (bitwise) answers
+
+* Can GPUs follow a similar pattern?
+
+
+.. see https://github.com/marshallward/fma-op-order
+
 
 Future questions
 ================
@@ -483,32 +534,35 @@ Future questions
 
 * Efficient memory management without maintenance overhead?
 
+* Can GPUs achieve any kind of self consistency?  Or at least can support GPUs
+  while retaining CPU self consistency?
+
 
 .. Proposed Strategy
    =================
-   
+
    1. Focus on Nvidia, start with OpenACC
-   
+
       Nvidia has first-class support for OpenACC -> CUDA conversion, and we can
       expect the highest level of support.
-   
+
       a. Embrace managed memory?  Or manual data transfer?
-   
+
    2. Explore transition to OpenMP
-   
+
       OpenMP and OpenACC mirror each other, with some nuances
-   
+
       a. Extend to Intel? AMD?
-   
+
    3. Embrace language-specific constructs
-   
+
       ``do concurrent`` with OpenACC/OpenMP may allow for convergence of CPU and
       GPU code blocks.
-   
+
    4. Focus on single-GPU then...
-   
+
       a. 1 MPI rank per GPU?
-   
+
       b. Single MPI rank, multiple GPUs?
 
 

@@ -414,8 +414,8 @@ associated with particular hardware.</p>
 <p>Others...?</p>
 </section>
 
-<section id="openacc" class="title-slide slide level1">
-<h1>OpenACC</h1>
+<section id="example-openacc" class="title-slide slide level1">
+<h1>Example OpenACC</h1>
 <p>Data transfers</p>
 <pre class="fortran"><code>!$acc enter data copyin(CS%G)
 !$acc enter data copyin(CS%G%dxT, CS%G%dyT, ...)
@@ -443,7 +443,8 @@ end do</code></pre>
 <p><a href="https://flang.llvm.org/docs/DoConcurrent.html">Not strictly
 parallel</a> and subject to many internal constraints - but they can be
 offloaded to GPUs.</p>
-<p>(OpenACC constructs can overcome some of its limitations.)</p>
+<p>(OpenACC can annotate <code>do concurrent</code> and overcome some of
+these limitations.)</p>
 </section>
 
 <section>
@@ -479,9 +480,14 @@ parallelization?</p></li>
 <h1>MOM6 GPU efforts</h1>
 <ul>
 <li>Barotropic solver (NCAR)</li>
-<li>Vertical Remapping workshop</li>
+<li>Vertical remapping workshop 😐</li>
 <li>BGC do-concurrent migration (Niki Zadeh, GFDL)</li>
 <li>Horizontal Viscosity (ongoing)</li>
+</ul>
+<p>Also ML-based solvers:</p>
+<ul>
+<li>PyTorch interface (Cheng Zhang; not yet merged)</li>
+<li>SmartRedis interface (Andrew Shao)</li>
 </ul>
 </section>
 
@@ -527,9 +533,26 @@ alt="image" /></p>
 </table>
 </section>
 
-<section id="weak-reproducibility" class="title-slide slide level1">
-<h1>"Weak" reproducibility</h1>
-<p>TODO</p>
+<section id="bit-reproducibility" class="title-slide slide level1">
+<h1>Bit reproducibility</h1>
+<figure>
+<video autoplay loop data-src="media/twolayer.mp4" controls=""><a
+href="media/twolayer.mp4">media/twolayer.mp4</a></video>
+</figure>
+<p>We model over an enormous range of length and time scales, with
+inherent turbulent cascades.</p>
+</section>
+
+<section id="when-to-reproduce" class="title-slide slide level1">
+<h1>When to reproduce</h1>
+<ul>
+<li>Since each node has its own hardware, compilers, and configurations,
+we cannot ever guarantee identical answers for everyone everyone.</li>
+<li>Development must still go on, but we cannot violate each node's bit
+reproducibility.</li>
+<li>We achieve this by <em>self consistency</em>! What does this
+mean?</li>
+</ul>
 </section>
 
 <section>
@@ -589,7 +612,18 @@ alt="image" /></td>
 </section></section>
 <section id="fma-support" class="title-slide slide level1">
 <h1>FMA support</h1>
-
+<ul>
+<li><p>Enabling FMAs will change answers, e.g. <span
+class="math inline">\(a b + c d\)</span>. What is the order of
+operations?</p></li>
+<li><p><em>Self-consistent</em> FMAs are allowed, otherwise they are
+disabled (e.g. rotation) with parentheses</p>
+<pre><code>PFu(I,j,k) = &amp;
+   (pa(i,j) * h(i,j,k) + intz_dpa(i,j)) &amp;
+   - (pa(i+1,j) * h(i+1,j,k) + intz_dpa(i+1,j)) + ...</code></pre></li>
+<li><p>FMA builds have their own (bitwise) answers</p></li>
+<li><p>Can GPUs follow a similar pattern?</p></li>
+</ul>
 </section>
 
 <section id="future-questions" class="title-slide slide level1">
@@ -599,6 +633,8 @@ alt="image" /></td>
 <code>do concurrent</code>?</li>
 <li>How to restructure code to avoid FMS in loops?</li>
 <li>Efficient memory management without maintenance overhead?</li>
+<li>Can GPUs achieve any kind of self consistency? Or at least can
+support GPUs while retaining CPU self consistency?</li>
 </ul>
 </section>
     </div>
