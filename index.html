@@ -67,13 +67,25 @@ href="https://github.com/marshallward/ncar2024.html">https://github.com/marshall
   </aside>
 </section>
 
-<section id="topics" class="title-slide slide level1">
-<h1>Topics</h1>
+<section id="questions" class="title-slide slide level1">
+<h1>Questions</h1>
 <ul>
 <li>GPU vs CPU: What do we gain?</li>
-<li>Producing GPU code from Fortran</li>
+<li>How to produce GPU code from Fortran?</li>
 <li>MOM6 as a community model</li>
 </ul>
+</section>
+
+<section id="compute-vs-memory" class="title-slide slide level1">
+<h1>Compute vs Memory</h1>
+<p><img data-src="img/dgemm_vs_daxpy.svg" alt="image" /></p>
+</section>
+
+<section id="where-is-mom6" class="title-slide slide level1">
+<h1>Where is MOM6?</h1>
+<p><img data-src="img/mom6_roofline.svg" style="width:70.0%"
+alt="image" /></p>
+<p>More memory bound (like most models)</p>
 </section>
 
 <section>
@@ -81,60 +93,60 @@ href="https://github.com/marshallward/ncar2024.html">https://github.com/marshall
 <h1>Peak performance</h1>
 <table>
 <tbody>
-<tr>
+<tr class="odd">
 <td><p>Nvidia GPUs</p>
 <table>
 <thead>
-<tr>
+<tr class="header">
 <th>Arch</th>
 <th>Year</th>
 <th>TFLOPs</th>
 </tr>
 </thead>
 <tbody>
-<tr>
+<tr class="odd">
 <td>V100</td>
 <td>2017</td>
 <td>7.0</td>
 </tr>
-<tr>
+<tr class="even">
 <td>A100</td>
 <td>2020</td>
-<td>9.7/19.5</td>
+<td>9.7</td>
 </tr>
-<tr>
+<tr class="odd">
 <td>H100</td>
 <td>2022</td>
-<td>25.6/51.2</td>
+<td>25.6</td>
 </tr>
 </tbody>
 </table></td>
 <td><p>Intel CPUs</p>
 <table>
 <thead>
-<tr>
+<tr class="header">
 <th>Xeon</th>
 <th>Year</th>
 <th>TFLOPs</th>
 </tr>
 </thead>
 <tbody>
-<tr>
+<tr class="odd">
 <td>8274</td>
 <td>2019</td>
 <td>2.1</td>
 </tr>
-<tr>
+<tr class="even">
 <td>8368</td>
 <td>2021</td>
 <td>4.1</td>
 </tr>
-<tr>
+<tr class="odd">
 <td>8592</td>
 <td>2023</td>
 <td>8.2</td>
 </tr>
-<tr>
+<tr class="even">
 <td>6780</td>
 <td>2024</td>
 <td>13.8</td>
@@ -144,14 +156,13 @@ href="https://github.com/marshallward/ncar2024.html">https://github.com/marshall
 </tr>
 </tbody>
 </table>
-<p>2x GPU speedup if using tensor cores</p>
 </section>
 <section id="peak-gpu-nvidia" class="slide level2">
 <h2>Peak GPU (Nvidia)</h2>
 <p>Peak computation:</p>
 <table>
 <thead>
-<tr>
+<tr class="header">
 <th>Arch</th>
 <th>Year</th>
 <th>SMs</th>
@@ -162,7 +173,7 @@ href="https://github.com/marshallward/ncar2024.html">https://github.com/marshall
 </tr>
 </thead>
 <tbody>
-<tr>
+<tr class="odd">
 <td>V100</td>
 <td>2017</td>
 <td>80</td>
@@ -171,7 +182,7 @@ href="https://github.com/marshallward/ncar2024.html">https://github.com/marshall
 <td>1.37</td>
 <td>7.0</td>
 </tr>
-<tr>
+<tr class="even">
 <td>A100</td>
 <td>2020</td>
 <td>108</td>
@@ -180,7 +191,7 @@ href="https://github.com/marshallward/ncar2024.html">https://github.com/marshall
 <td>1.41</td>
 <td>9.7</td>
 </tr>
-<tr>
+<tr class="odd">
 <td>H100</td>
 <td>2022</td>
 <td>114</td>
@@ -197,7 +208,7 @@ href="https://github.com/marshallward/ncar2024.html">https://github.com/marshall
 <h2>Peak CPU (Intel)</h2>
 <table>
 <thead>
-<tr>
+<tr class="header">
 <th>CPU</th>
 <th>Year</th>
 <th>Cores</th>
@@ -208,7 +219,7 @@ href="https://github.com/marshallward/ncar2024.html">https://github.com/marshall
 </tr>
 </thead>
 <tbody>
-<tr>
+<tr class="odd">
 <td>8274</td>
 <td>2019</td>
 <td>24</td>
@@ -217,7 +228,7 @@ href="https://github.com/marshallward/ncar2024.html">https://github.com/marshall
 <td>2.8</td>
 <td>2.1</td>
 </tr>
-<tr>
+<tr class="even">
 <td>8368</td>
 <td>2021</td>
 <td>38</td>
@@ -226,7 +237,7 @@ href="https://github.com/marshallward/ncar2024.html">https://github.com/marshall
 <td>3.4</td>
 <td>4.1</td>
 </tr>
-<tr>
+<tr class="odd">
 <td>8592</td>
 <td>2023</td>
 <td>64</td>
@@ -235,7 +246,7 @@ href="https://github.com/marshallward/ncar2024.html">https://github.com/marshall
 <td>4.0</td>
 <td>8.2</td>
 </tr>
-<tr>
+<tr class="even">
 <td>6780</td>
 <td>2024</td>
 <td>144</td>
@@ -247,74 +258,64 @@ href="https://github.com/marshallward/ncar2024.html">https://github.com/marshall
 </tbody>
 </table>
 </section></section>
-<section id="compute-vs-ram" class="title-slide slide level1">
-<h1>Compute vs RAM</h1>
-<p><img data-src="img/dgemm_vs_daxpy.svg" alt="image" /></p>
-</section>
-
-<section id="peak-ram-bound" class="title-slide slide level1">
-<h1>Peak RAM bound</h1>
+<section id="peak-bandwidth" class="title-slide slide level1">
+<h1>Peak Bandwidth</h1>
 <table>
 <tbody>
-<tr>
+<tr class="odd">
 <td><p>Nvidia GPUs</p>
 <table>
 <thead>
-<tr>
+<tr class="header">
 <th>Arch</th>
 <th>Year</th>
 <th>GB/s</th>
 </tr>
 </thead>
 <tbody>
-<tr>
+<tr class="odd">
 <td>V100</td>
 <td>2017</td>
 <td>896</td>
 </tr>
-<tr>
+<tr class="even">
 <td>A100</td>
 <td>2020</td>
-<td>778*</td>
+<td>1555</td>
 </tr>
-<tr>
+<tr class="odd">
 <td>H100</td>
 <td>2022</td>
-<td>640*</td>
-</tr>
-<tr>
-<td>SXM5</td>
-<td>--</td>
-<td>960*</td>
+<td>2039</td>
 </tr>
 </tbody>
 </table></td>
 <td><p>Intel CPUs</p>
 <table>
 <thead>
-<tr>
+<tr class="header">
 <th>Xeon</th>
 <th>Year</th>
 <th>GB/s</th>
 </tr>
 </thead>
 <tbody>
-<tr>
+<tr class="odd">
 <td>8274</td>
 <td>2019</td>
 <td>141</td>
 </tr>
-<tr>
+<tr class="even">
 <td>8368</td>
 <td>2021</td>
 <td>204</td>
 </tr>
-<tr>
+<tr class="odd">
 <td>8592</td>
 <td>2023</td>
 <td>307</td>
 </tr>
-<tr>
+<tr class="even">
 <td>6780</td>
 <td>2024</td>
 <td>409</td>
@@ -324,19 +325,13 @@ href="https://github.com/marshallward/ncar2024.html">https://github.com/marshall
 </tr>
 </tbody>
 </table>
-<p>Again, GPU is faster but not 10x fast</p>
+<p>GPU speedup due to HBM memory (vs DDR)</p>
 </section>
 
-<section id="where-is-mom6" class="title-slide slide level1">
-<h1>Where is MOM6?</h1>
-<p><img data-src="img/mom6_roofline.svg" style="width:70.0%"
-alt="image" /></p>
-<p>Not compute bound, maybe mem bound?</p>
-</section>
-
-<section id="transition-to-gpus" class="title-slide slide level1">
-<h1>Transition to GPUs</h1>
-<p>Performance is not the only reason to adopt GPUs</p>
+<section id="what-should-we-gain" class="title-slide slide level1">
+<h1>What should we gain?</h1>
+<p>Ideally, we should expect <strong>5-10x speedup</strong>. But
+performance is not the only reason to adopt GPUs:</p>
 <ul>
 <li>Economics: Costs of hardware and energy</li>
 <li>Availability: Industry embrace of ML on GPU</li>
@@ -358,7 +353,7 @@ alt="image" /></p>
 <col style="width: 50%" />
 </colgroup>
 <tbody>
-<tr>
+<tr class="odd">
 <td><p><img data-src="img/gpucode.svg" alt="image" /></p></td>
 <td><p>Any language can use device APIs, but most only support CUDA.</p>
 <p>Clang/Flang and GNU can target all device APIs. (Performance may
@@ -399,23 +394,24 @@ GCC?</li>
 <p>Although these are somewhat generic, for practical purposes they are
 associated with particular hardware.</p>
 </section></section>
-<section id="development-issues" class="title-slide slide level1">
-<h1>Development Issues</h1>
-<ul>
-<li>Coding methods
-<ul>
-<li>OpenACC, OpenMP, <code>do concurrent</code>, lower level?
-Rewrite?</li>
-</ul></li>
-<li>Impementation Challenges
-<ul>
-<li>Data transfer: explicit, managed?</li>
-</ul></li>
-<li>External codes
-<ul>
-<li></li>
-</ul></li>
-</ul>
+<section id="fortran-options" class="title-slide slide level1">
+<h1>Fortran Options</h1>
+<dl>
+<dt>OpenACC, OpenMP</dt>
+<dd>
+<p>Export loops to CUDA</p>
+</dd>
+<dt>Transpile to/from Fortran</dt>
+<dd>
+<p><a href="https://github.com/stfc/PSyclone">PSyclone</a>, PACE,
+...</p>
+</dd>
+<dt>Hybrid programming</dt>
+<dd>
+<p>Fortran application, loops in CUDA cores</p>
+</dd>
+</dl>
+<p>Others...?</p>
 </section>
 
 <section id="openacc" class="title-slide slide level1">
@@ -428,108 +424,47 @@ Rewrite?</li>
 <p>Loop execution</p>
 <pre class="fortran"><code>!$acc kernels present(G)
 do k = 1,nz
-   do j=1,m ... enddo
-   do j=1,m ... enddo
+   do j=1,n ; do i=1,n
+      ...
+   end do ; end do
+   do j=1,n ; do i=1,n
+      ...
+   end do ; end do
 enddo
 !$acc end kernels</code></pre>
 </section>
 
-<section id="openmp" class="title-slide slide level1">
-<h1>OpenMP</h1>
-<p>OpenMP 4.0 introduced the <code>target</code> construct:</p>
-<pre class="fortran"><code>!$omp target data map(to:x) map(tofrom:y)
-do i = 1, n
-  y(i) = a * x(i) + y(i)
-end do
-!$omp end target</code></pre>
-</section>
-
-<section id="openacc-and-openmp" class="title-slide slide level1">
-<h1>OpenACC and OpenMP</h1>
-<ul>
-<li>Both are open standards, OpenACC has Nvidia connections</li>
-<li>OpenACC host/target support predates OpenMP</li>
-<li>Both standards heavily mirror each other, similar people driving
-development of each standard.</li>
-</ul>
-</section>
-
-<section id="openacc-vs-openmp" class="title-slide slide level1">
-<h1>OpenACC vs OpenMP</h1>
-<ul>
-<li>OpenACC has more features, such as the very convenient
-<code>$acc kernels</code></li>
-<li>OpenMP has wider support across systems and compilers
-<ul>
-<li>For example, we know GCC has better OpenMP support</li>
-<li>... But do we care?</li>
-</ul></li>
-</ul>
-<p>Monitoring of Nvidia forums suggests comparable performance (and
-perhaps more attention to OpenMP at the moment).</p>
-</section>
-
 <section id="do-concurrent" class="title-slide slide level1">
 <h1><code>do concurrent</code></h1>
-<table>
-<colgroup>
-<col style="width: 50%" />
-<col style="width: 50%" />
-</colgroup>
-<tbody>
-<tr>
-<td><pre class="fortran"><code>do j = 1,n ; do i = 1,m
+<p>Arbitrary-order loops:</p>
+<pre class="fortran"><code>do concurrent (i=1:m, j=1:n)
   a(i,j) = b(i,j) * c(i,j) + d(i,j)
-end do ; end do</code></pre></td>
-<td><pre class="fortran"><code>do concurrent (i=1:m, j=1:n)
-  a(i,j) = b(i,j) * c(i,j) + d(i,j)
-end do</code></pre></td>
-</tr>
-</tbody>
-</table>
+end do</code></pre>
 <p><a href="https://flang.llvm.org/docs/DoConcurrent.html">Not strictly
-parallel</a> (only "arbitrary order") and subject to many internal
-constraints, more than OpenACC loops.</p>
-<p>OpenACC decoration can overcome some of these problems.</p>
+parallel</a> and subject to many internal constraints - but they can be
+offloaded to GPUs.</p>
+<p>(OpenACC constructs can overcome some of its limitations.)</p>
 </section>
 
-<section id="mom6-gpu-efforts" class="title-slide slide level1">
-<h1>MOM6 GPU efforts</h1>
+<section>
+<section id="openacc-in-mom6" class="title-slide slide level1">
+<h1>OpenACC in MOM6</h1>
 <ul>
-<li>Barotropic solver (NCAR?)</li>
-<li>Vertical Remapping workshop</li>
-<li>BGC do-concurrent migration (Niki Zadeh, CISL)</li>
-<li>Horizontal Viscosity (ongoing)</li>
-</ul>
-</section>
-
-<section id="remapping" class="title-slide slide level1">
-<h1>Remapping</h1>
-
-</section>
-
-<section id="principal-challenges" class="title-slide slide level1">
-<h1>Principal challenges</h1>
+<li>Parallelization often needs <code>private()</code></li>
+<li>Data transfer often needs to be explicit
+(<code>copyin/out</code>)</li>
+<li>FMS inside loops:
 <ul>
-<li>Export arrays and loops to GPU</li>
-<li>Minimize data transfers across entirety of model</li>
-</ul>
-</section>
-
-<section id="challenges" class="title-slide slide level1">
-<h1>Challenges</h1>
-<ul>
-<li>FMS is a framework layer to most OS operations
-<ul>
-<li>Parallelization (MPI)</li>
-<li>IO, including domain decomposition</li>
-<li>Miscellaneous (clocks, ...?)</li>
+<li>halo updates (<code>pass_var</code>)</li>
+<li>IO, diagnostics (<code>post_data</code>)</li>
+<li>Clocks (<code>cpu_clock_begin</code>)</li>
+<li>Error handling (<code>MOM_error</code>)</li>
 </ul></li>
+<li>165k statements (250k lines) to analyze</li>
 </ul>
 </section>
-
-<section id="parallelization" class="title-slide slide level1">
-<h1>Parallelization</h1>
+<section id="parallelization" class="slide level2">
+<h2>Parallelization</h2>
 <ol type="1">
 <li><p>Ignore MPI for GPU builds? Assume PE == 1?</p></li>
 <li><p>Consider MPI across nodes, GPU on-node?</p></li>
@@ -539,15 +474,14 @@ GPU?)</p></li>
 <p>How (if at all) do we integrate this into FMS
 parallelization?</p></li>
 </ol>
-</section>
-
-<section id="barriers-to-development" class="title-slide slide level1">
-<h1>Barriers to development</h1>
+</section></section>
+<section id="mom6-gpu-efforts" class="title-slide slide level1">
+<h1>MOM6 GPU efforts</h1>
 <ul>
-<li>Contributions from new scientists</li>
-<li>Long-term maintenance</li>
-<li>Portability across partners</li>
-<li>Bit reproducibility across partners</li>
+<li>Barotropic solver (NCAR)</li>
+<li>Vertical Remapping workshop</li>
+<li>BGC do-concurrent migration (Niki Zadeh, GFDL)</li>
+<li>Horizontal Viscosity (ongoing)</li>
 </ul>
 </section>
 
@@ -565,7 +499,7 @@ alt="image" /></p>
 <col style="width: 50%" />
 </colgroup>
 <tbody>
-<tr>
+<tr class="odd">
 <td><p><img data-src="img/consortium.svg" alt="image" /></p></td>
 <td><p>Codebase is governed by a consortium of research groups.</p>
 <p>All changes to the "hub" must be tracked and preserved.</p>
@@ -575,36 +509,97 @@ alt="image" /></p>
 </tbody>
 </table>
 </section></section>
-<section id="preservation-of-results" class="title-slide slide level1">
-<h1>Preservation of Results</h1>
-<ul>
-<li></li>
-</ul>
+<section id="shared-development" class="title-slide slide level1">
+<h1>Shared development</h1>
+<table>
+<colgroup>
+<col style="width: 40%" />
+<col style="width: 60%" />
+</colgroup>
+<tbody>
+<tr class="odd">
+<td><p><img data-src="img/git_nodes_dev.svg" alt="image" /></p></td>
+<td><p>Many groups using diverse experiments and hardware</p>
+<p>... but collaboration on a shared codebase.</p>
+<p>This is achieved through a commitment to reproducibility.</p></td>
+</tr>
+</tbody>
+</table>
 </section>
 
-<section id="proposed-strategy" class="title-slide slide level1">
-<h1>Proposed Strategy</h1>
-<ol type="1">
-<li><p>Focus on Nvidia, start with OpenACC</p>
-<p>Nvidia has first-class support for OpenACC -&gt; CUDA conversion, and
-we can expect the highest level of support.</p>
-<ol type="a">
-<li>Embrace managed memory? Or manual data transfer?</li>
-</ol></li>
-<li><p>Explore transition to OpenMP</p>
-<p>OpenMP and OpenACC mirror each other, with some nuances</p>
-<ol type="a">
-<li>Extend to Intel? AMD?</li>
-</ol></li>
-<li><p>Embrace language-specific constructs</p>
-<p><code>do concurrent</code> with OpenACC/OpenMP may allow for
-convergence of CPU and GPU code blocks.</p></li>
-<li><p>Focus on single-GPU then...</p>
-<ol type="a">
-<li>1 MPI rank per GPU?</li>
-<li>Single MPI rank, multiple GPUs?</li>
-</ol></li>
-</ol>
+<section id="weak-reproducibility" class="title-slide slide level1">
+<h1>"Weak" reproducibility</h1>
+<p>TODO</p>
+</section>
+
+<section>
+<section id="self-consistency" class="title-slide slide level1">
+<h1>Self Consistency</h1>
+<dl>
+<dt>Parallel Layout</dt>
+<dd>
+<p>All domain decompositions give the same result</p>
+</dd>
+<dt>Restart/Pickup</dt>
+<dd>
+<p>One <span class="math inline">\(\Delta t\)</span> run must equal two
+<span class="math inline">\(\tfrac{1}{2}\Delta t\)</span> runs</p>
+</dd>
+<dt>Dimensionality</dt>
+<dd>
+<p>Equations must be invariant to dimensional scaling</p>
+</dd>
+<dt>Rotational invariance</dt>
+<dd>
+<p>Results must be invariant to an index rotation</p>
+</dd>
+</dl>
+</section>
+<section id="dimension-test" class="slide level2">
+<h2>Dimension Test</h2>
+<p><span class="math display">\[\begin{aligned}
+u^{n+1} &amp;= u^{n} +  \Delta t \times \mathcal{F} \\
+\color{yellow}{2^{L-T}} u^{n+1} &amp;= \color{yellow}{2^{L-T}} u^{n}
+   + \color{yellow}{2^T} \Delta t
+   \times \color{yellow}{2^{L - 2T}} \mathcal{F}
+\end{aligned}\]</span></p>
+<p>If equations are dimensionally correct, then solutions should be
+invariant to scaling.</p>
+</section>
+<section id="rotation-test" class="slide level2">
+<h2>Rotation Test</h2>
+<p>Expressions should be invariant to rotation</p>
+<table style="width:50%;">
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<tbody>
+<tr class="odd">
+<td><img data-src="media/rotate.png" alt="image" /></td>
+<td><img data-src="media/orig.png" alt="image" /></td>
+</tr>
+<tr class="even">
+<td><img data-src="img/rotate_grid1.svg" alt="image" /></td>
+<td><img data-src="img/rotate_grid2.svg" style="width:60.0%"
+alt="image" /></td>
+</tr>
+</tbody>
+</table>
+</section></section>
+<section id="fma-support" class="title-slide slide level1">
+<h1>FMA support</h1>
+
+</section>
+
+<section id="future-questions" class="title-slide slide level1">
+<h1>Future questions</h1>
+<ul>
+<li>Continue with OpenACC? Or explore portability with OpenMP and
+<code>do concurrent</code>?</li>
+<li>How to restructure code to avoid FMS in loops?</li>
+<li>Efficient memory management without maintenance overhead?</li>
+</ul>
 </section>
     </div>
   </div>

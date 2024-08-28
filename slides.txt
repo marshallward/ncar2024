@@ -11,14 +11,29 @@ MOM6 on the GPU?
    Gathering of talking points for porting MOM6 to GPU platforms.
 
 
-Topics
-======
+Questions
+=========
 
 * GPU vs CPU: What do we gain?
 
-* Producing GPU code from Fortran
+* How to produce GPU code from Fortran?
 
 * MOM6 as a community model
+
+
+Compute vs Memory
+=================
+
+.. image:: img/dgemm_vs_daxpy.svg
+
+
+Where is MOM6?
+==============
+
+.. image:: img/mom6_roofline.svg
+   :width: 70%
+
+More memory bound (like most models)
 
 
 Peak performance
@@ -29,13 +44,13 @@ Peak performance
 
    * - Nvidia GPUs
 
-       ====  ====  ===========
+       ====  ====  ======
        Arch  Year  TFLOPs
-       ====  ====  ===========
+       ====  ====  ======
        V100  2017  7.0
-       A100  2020  9.7/19.5
-       H100  2022  25.6/51.2
-       ====  ====  ===========
+       A100  2020  9.7
+       H100  2022  25.6
+       ====  ====  ======
 
      - Intel CPUs
 
@@ -48,7 +63,7 @@ Peak performance
        6780  2024  13.8
        ====  ====  ======
 
-2x GPU speedup if using tensor cores
+.. NOTE FP64 speeds reported here, Tensor cores are 2x higher
 
 
 Peak GPU (Nvidia)
@@ -88,13 +103,7 @@ CPU   Year   Cores  AVX  FMAc  Clock  TFLOPs
 ====  =====  =====  ===  ====  =====  ======
 
 
-Compute vs RAM
-==============
-
-.. image:: img/dgemm_vs_daxpy.svg
-
-
-Peak RAM bound
+Peak Bandwidth
 ==============
 
 .. TODO: Compute these from specs, dont copy from Wikipedia
@@ -107,9 +116,8 @@ Peak RAM bound
        Arch  Year  GB/s
        ====  ====  ======
        V100  2017  896
-       A100  2020  778*
-       H100  2022  640*
-       SXM5  --    960*
+       A100  2020  1555
+       H100  2022  2039
        ====  ====  ======
 
      - Intel CPUs
@@ -123,23 +131,16 @@ Peak RAM bound
        6780  2024  409
        ====  ====  ======
 
-Again, GPU is faster but not 10x fast
+GPU speedup due to HBM memory (vs DDR)
+
+.. PCIe speeds reported here, SXM is quite a bit higher
 
 
+What should we gain?
+====================
 
-Where is MOM6?
-==============
-
-.. image:: img/mom6_roofline.svg
-   :width: 70%
-
-Not compute bound, maybe mem bound?
-
-
-Transition to GPUs
-==================
-
-Performance is not the only reason to adopt GPUs
+Ideally, we should expect **5-10x speedup**.  But performance is not the only
+reason to adopt GPUs:
 
 * Economics: Costs of hardware and energy
 
@@ -214,20 +215,21 @@ Although these are somewhat generic, for practical purposes they are associated
 with particular hardware.
 
 
-Development Issues
-==================
+Fortran Options
+===============
 
-* Coding methods
+OpenACC, OpenMP
+   Export loops to CUDA
 
-  * OpenACC, OpenMP, ``do concurrent``, lower level?  Rewrite?
+Transpile to/from Fortran
+   PSyclone_, PACE, ...
 
-* Impementation Challenges
+Hybrid programming
+   Fortran application, loops in CUDA cores
 
-  * Data transfer: explicit, managed?
+Others...?
 
-* External codes
-
-  *
+.. _PSyclone: https://github.com/stfc/PSyclone
 
 
 OpenACC
@@ -248,78 +250,68 @@ Loop execution
 
    !$acc kernels present(G)
    do k = 1,nz
-      do j=1,m ... enddo
-      do j=1,m ... enddo
+      do j=1,n ; do i=1,n
+         ...
+      end do ; end do
+      do j=1,n ; do i=1,n
+         ...
+      end do ; end do
    enddo
    !$acc end kernels
 
 
-OpenMP
-======
-
-OpenMP 4.0 introduced the ``target`` construct:
-
-.. code:: fortran
-
-   !$omp target data map(to:x) map(tofrom:y)
-   do i = 1, n
-     y(i) = a * x(i) + y(i)
-   end do
-   !$omp end target
-
-
-OpenACC and OpenMP
-==================
-
-* Both are open standards, OpenACC has Nvidia connections
-
-* OpenACC host/target support predates OpenMP
-
-* Both standards heavily mirror each other, similar people driving development
-  of each standard.
-
-.. NOAA and NCAR are auxiliary members, Daniel Howard is Corporate Officer
+.. OpenMP
+   ======
+   
+   OpenMP 4.0 introduced the ``target`` construct:
+   
+   .. code:: fortran
+   
+      !$omp target data map(to:x) map(tofrom:y)
+      do i = 1, n
+        y(i) = a * x(i) + y(i)
+      end do
+      !$omp end target
 
 
-OpenACC vs OpenMP
-=================
-
-* OpenACC has more features, such as the very convenient ``$acc kernels``
-
-* OpenMP has wider support across systems and compilers
-
-  * For example, we know GCC has better OpenMP support
-
-  * ... But do we care?
-
-Monitoring of Nvidia forums suggests comparable performance (and perhaps more
-attention to OpenMP at the moment).
+   OpenACC and OpenMP
+   ==================
+   
+   * Both are open standards, OpenACC has Nvidia connections
+   
+   * OpenACC host/target support predates OpenMP
+   
+   * Both standards heavily mirror each other, similar people driving development
+     of each standard.
+   
+   .. NOAA and NCAR are auxiliary members, Daniel Howard is Corporate Officer
+   
+   
+   OpenACC vs OpenMP
+   =================
+   
+   * OpenACC has more features, such as the very convenient ``$acc kernels``
+   
+   * OpenMP has wider support across systems and compilers
 
 
 ``do concurrent``
 =================
 
-.. list-table::
-   :widths: 50 50
+Arbitrary-order loops:
 
-   * - .. code:: fortran
+.. code:: fortran
 
-          do j = 1,n ; do i = 1,m
-            a(i,j) = b(i,j) * c(i,j) + d(i,j)
-          end do ; end do
+   do concurrent (i=1:m, j=1:n)
+     a(i,j) = b(i,j) * c(i,j) + d(i,j)
+   end do
 
-     - .. code:: fortran
-
-          do concurrent (i=1:m, j=1:n)
-            a(i,j) = b(i,j) * c(i,j) + d(i,j)
-          end do
-
-`Not strictly parallel`_ (only "arbitrary order") and subject to many internal
-constraints, more than OpenACC loops.
+`Not strictly parallel`_ and subject to many internal constraints - but they
+can be offloaded to GPUs.
 
 .. _Not strictly parallel: https://flang.llvm.org/docs/DoConcurrent.html
 
-OpenACC decoration can overcome some of these problems.
+(OpenACC constructs can overcome some of its limitations.)
 
 .. other notes
    GNU cannot even parse some do concurrent decorators, see below.
@@ -328,49 +320,25 @@ OpenACC decoration can overcome some of these problems.
 .. Nvidia and Intel are both promoting this feature
 
 
-MOM6 GPU efforts
-================
+OpenACC in MOM6
+===============
 
-* Barotropic solver (NCAR?)
+* Parallelization often needs ``private()``
 
-* Vertical Remapping workshop
+* Data transfer often needs to be explicit (``copyin/out``)
 
-* BGC do-concurrent migration (Niki Zadeh, CISL)
+* FMS inside loops:
 
-* Horizontal Viscosity (ongoing)
+  * halo updates (``pass_var``)
+  * IO, diagnostics (``post_data``)
+  * Clocks (``cpu_clock_begin``)
+  * Error handling (``MOM_error``)
 
-
-Remapping
-=========
-
-
-
-.. TODO: What did we learn?
-
-
-Principal challenges
-====================
-
-* Export arrays and loops to GPU
-
-* Minimize data transfers across entirety of model
-
-
-
-Challenges
-==========
-
-* FMS is a framework layer to most OS operations
-
-  * Parallelization (MPI)
-
-  * IO, including domain decomposition
-
-  * Miscellaneous (clocks, ...?)
+* 165k statements (250k lines) to analyze
 
 
 Parallelization
-===============
+---------------
 
 1. Ignore MPI for GPU builds?  Assume PE == 1?
 
@@ -383,16 +351,28 @@ Parallelization
    How (if at all) do we integrate this into FMS parallelization?
 
 
-Barriers to development
-=======================
+MOM6 GPU efforts
+================
 
-* Contributions from new scientists
+* Barotropic solver (NCAR)
 
-* Long-term maintenance
+* Vertical Remapping workshop
 
-* Portability across partners
+* BGC do-concurrent migration (Niki Zadeh, GFDL)
 
-* Bit reproducibility across partners
+* Horizontal Viscosity (ongoing)
+
+
+.. Barriers to development
+   =======================
+   
+   * Contributions from new scientists
+   
+   * Long-term maintenance
+   
+   * Portability across partners
+   
+   * Bit reproducibility across partners
 
 
 MOM6 Consortium
@@ -417,38 +397,119 @@ What is the MOM6 Consortium?
        Groups manage their own branch, and contribute to ``main``.
 
 
-Preservation of Results
-=======================
+Shared development
+==================
 
-*
+.. list-table::
+   :widths: 40 60
+
+   - * .. image:: img/git_nodes_dev.svg
+
+     * Many groups using diverse experiments and hardware
+
+       ... but collaboration on a shared codebase.
+
+       This is achieved through a commitment to reproducibility.
 
 
-Proposed Strategy
-=================
+"Weak" reproducibility
+======================
 
-1. Focus on Nvidia, start with OpenACC
+TODO
 
-   Nvidia has first-class support for OpenACC -> CUDA conversion, and we can
-   expect the highest level of support.
 
-   a. Embrace managed memory?  Or manual data transfer?
+Self Consistency
+================
 
-2. Explore transition to OpenMP
+Parallel Layout
+   All domain decompositions give the same result
 
-   OpenMP and OpenACC mirror each other, with some nuances
+Restart/Pickup
+   One :math:`\Delta t` run must equal two :math:`\tfrac{1}{2}\Delta t` runs
 
-   a. Extend to Intel? AMD?
+Dimensionality
+   Equations must be invariant to dimensional scaling
 
-3. Embrace language-specific constructs
+Rotational invariance
+   Results must be invariant to an index rotation
 
-   ``do concurrent`` with OpenACC/OpenMP may allow for convergence of CPU and
-   GPU code blocks.
+.. Aggressive initialization
+   NaN-initialization arrays vs. uninitialized arrays
 
-4. Focus on single-GPU then...
 
-   a. 1 MPI rank per GPU?
+Dimension Test
+--------------
 
-   b. Single MPI rank, multiple GPUs?
+.. math::
+
+   u^{n+1} &= u^{n} +  \Delta t \times \mathcal{F} \\
+   \color{yellow}{2^{L-T}} u^{n+1} &= \color{yellow}{2^{L-T}} u^{n}
+      + \color{yellow}{2^T} \Delta t
+      \times \color{yellow}{2^{L - 2T}} \mathcal{F}
+
+If equations are dimensionally correct, then solutions should be invariant to
+scaling.
+
+
+Rotation Test
+-------------
+
+Expressions should be invariant to rotation
+
+.. list-table::
+   :widths: 25 25 25 25
+
+   * - .. image:: media/rotate.png
+
+     - .. image:: media/orig.png
+
+   * - .. image:: img/rotate_grid1.svg
+
+     - .. image:: img/rotate_grid2.svg
+          :width: 60%
+
+
+FMA support
+===========
+
+
+Future questions
+================
+
+* Continue with OpenACC?  Or explore portability with OpenMP and ``do
+  concurrent``?
+
+* How to restructure code to avoid FMS in loops?
+
+* Efficient memory management without maintenance overhead?
+
+
+.. Proposed Strategy
+   =================
+   
+   1. Focus on Nvidia, start with OpenACC
+   
+      Nvidia has first-class support for OpenACC -> CUDA conversion, and we can
+      expect the highest level of support.
+   
+      a. Embrace managed memory?  Or manual data transfer?
+   
+   2. Explore transition to OpenMP
+   
+      OpenMP and OpenACC mirror each other, with some nuances
+   
+      a. Extend to Intel? AMD?
+   
+   3. Embrace language-specific constructs
+   
+      ``do concurrent`` with OpenACC/OpenMP may allow for convergence of CPU and
+      GPU code blocks.
+   
+   4. Focus on single-GPU then...
+   
+      a. 1 MPI rank per GPU?
+   
+      b. Single MPI rank, multiple GPUs?
 
 
 .. 32-bit mode?
