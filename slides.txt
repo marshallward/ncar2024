@@ -351,6 +351,13 @@ Parallelization
 
    How (if at all) do we integrate this into FMS parallelization?
 
+Potential Targets
+=================
+
+.. image:: img/mom6_time_table.svg
+
+Performance has a long tail distribution
+
 
 MOM6 GPU efforts
 ================
